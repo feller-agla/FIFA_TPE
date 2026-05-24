@@ -1,0 +1,53 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
+
+@Injectable()
+export class TicketsService {
+  constructor(private readonly database: DatabaseService) {}
+
+  findAll() {
+    return this.database.listTickets();
+  }
+
+  create(body: {
+    reference?: string;
+    deviceId?: string;
+    agentId?: number;
+    serviceType?: string;
+    route?: string;
+    amount?: number;
+    paymentMode?: string;
+    passengerName?: string;
+    passengerPhone?: string;
+    packageDetails?: string;
+    receiverName?: string;
+    receiverPhone?: string;
+    ticketText?: string;
+  }) {
+    const reference = body.reference?.trim();
+    const deviceId = body.deviceId?.trim();
+    const serviceType = body.serviceType?.trim();
+    const route = body.route?.trim();
+    const amount = Number(body.amount ?? 0);
+
+    if (!reference || !deviceId || !serviceType || !route || !Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('reference, deviceId, serviceType, route and amount are required');
+    }
+
+    return this.database.createTicket({
+      reference,
+      deviceId,
+      agentId: body.agentId ?? null,
+      serviceType,
+      route,
+      amount,
+      paymentMode: body.paymentMode?.trim() || 'cash',
+      passengerName: body.passengerName?.trim() || null,
+      passengerPhone: body.passengerPhone?.trim() || null,
+      packageDetails: body.packageDetails?.trim() || null,
+      receiverName: body.receiverName?.trim() || null,
+      receiverPhone: body.receiverPhone?.trim() || null,
+      ticketText: body.ticketText?.trim() || null,
+    });
+  }
+}
