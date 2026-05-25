@@ -17,6 +17,7 @@ export class TicketsController {
       reference?: string;
       deviceId?: string;
       agentId?: number;
+      sessionToken?: string;
       serviceType?: string;
       route?: string;
       amount?: number;

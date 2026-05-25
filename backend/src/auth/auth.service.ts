@@ -5,12 +5,13 @@ import { DatabaseService } from '../database/database.service';
 export class AuthService {
   constructor(private readonly database: DatabaseService) {}
 
-  async login(body: { email?: string; password?: string }) {
+  async login(body: { email?: string; password?: string; deviceId?: string }) {
     const email = body.email?.trim().toLowerCase();
     const password = body.password?.trim();
+    const deviceId = body.deviceId?.trim();
 
-    if (!email || !password) {
-      throw new BadRequestException('email and password are required');
+    if (!email || !password || !deviceId) {
+      throw new BadRequestException('email, password and deviceId are required');
     }
 
     const agent = await this.database.findAgentAuthByEmail(email);
@@ -23,6 +24,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const session = await this.database.createAgentSession(agent.id, deviceId);
+
     return {
       agent: {
         id: agent.id,
@@ -33,6 +36,37 @@ export class AuthService {
         active: agent.active,
         created_at: agent.created_at,
       },
+      session: {
+        id: session.id,
+        device_id: session.device_id,
+        session_token: session.session_token,
+        active: session.active,
+        last_seen_at: session.last_seen_at,
+        created_at: session.created_at,
+      },
     };
+  }
+
+  async logout(body: { sessionToken?: string }) {
+    const sessionToken = body.sessionToken?.trim();
+    if (!sessionToken) {
+      throw new BadRequestException('sessionToken is required');
+    }
+
+    const session = await this.database.findSessionByToken(sessionToken);
+    if (!session) {
+      return { success: true };
+    }
+
+    await this.database.revokeSession(session.id);
+    return { success: true };
+  }
+
+  async listSessions() {
+    return this.database.listSessions();
+  }
+
+  async revokeSession(sessionId: number) {
+    return this.database.revokeSession(sessionId);
   }
 }

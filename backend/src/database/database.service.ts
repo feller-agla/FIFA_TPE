@@ -45,6 +45,19 @@ export type TicketRow = {
   created_at: string;
 };
 
+export type AgentSessionRow = {
+  id: number;
+  agent_id: number;
+  device_id: string;
+  session_token: string;
+  active: boolean;
+  last_seen_at: string;
+  revoked_at: string | null;
+  created_at: string;
+};
+
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
 @Injectable()
 export class DatabaseService implements OnModuleInit {
   private supabase!: SupabaseClient;
@@ -103,9 +116,10 @@ export class DatabaseService implements OnModuleInit {
 
   async updateAgent(
     id: number,
-    body: { fullName?: string; email?: string | null; phone?: string | null; active?: boolean; password?: string | null },
+    body: { code?: string; fullName?: string; email?: string | null; phone?: string | null; active?: boolean; password?: string | null },
   ) {
     const patch: Record<string, unknown> = {};
+    if (body.code !== undefined) patch.code = body.code;
     if (body.fullName !== undefined) patch.full_name = body.fullName;
     if (body.email !== undefined) patch.email = body.email;
     if (body.phone !== undefined) patch.phone = body.phone;
@@ -154,6 +168,183 @@ export class DatabaseService implements OnModuleInit {
     const salt = randomBytes(16).toString('hex');
     const hash = pbkdf2Sync(password, salt, 120000, 64, 'sha512').toString('hex');
     return { salt, hash };
+  }
+
+  async createAgentSession(agentId: number, deviceId: string) {
+    const activeSession = await this.supabase
+      .from('agent_sessions')
+      .select('*')
+      .eq('agent_id', agentId)
+      .eq('active', true)
+      .order('last_seen_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (activeSession.error) {
+      throw new BadRequestException(activeSession.error.message);
+    }
+
+    if (activeSession.data) {
+      const sessionAge = Date.now() - new Date(activeSession.data.last_seen_at).getTime();
+      const isFresh = sessionAge < SESSION_TTL_MS;
+
+      if (isFresh && activeSession.data.device_id !== deviceId) {
+        throw new BadRequestException('Agent already connected on another TPE');
+      }
+
+      if (isFresh && activeSession.data.device_id === deviceId) {
+        const { data, error } = await this.supabase
+          .from('agent_sessions')
+          .update({ last_seen_at: new Date().toISOString() })
+          .eq('id', activeSession.data.id)
+          .select('*')
+          .single();
+
+        if (error) throw new BadRequestException(error.message);
+        return data as AgentSessionRow;
+      }
+
+      await this.supabase
+        .from('agent_sessions')
+        .update({ active: false, revoked_at: new Date().toISOString() })
+        .eq('id', activeSession.data.id);
+    }
+
+    const { data, error } = await this.supabase
+      .from('agent_sessions')
+      .insert({
+        agent_id: agentId,
+        device_id: deviceId,
+        session_token: randomBytes(24).toString('hex'),
+        active: true,
+        last_seen_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as AgentSessionRow;
+  }
+
+  async findSessionByToken(sessionToken: string) {
+    const { data, error } = await this.supabase
+      .from('agent_sessions')
+      .select('*')
+      .eq('session_token', sessionToken)
+      .eq('active', true)
+      .maybeSingle();
+
+    if (error) throw new BadRequestException(error.message);
+    if (!data) return null;
+
+    const sessionAge = Date.now() - new Date(data.last_seen_at).getTime();
+    if (sessionAge >= SESSION_TTL_MS) {
+      await this.supabase
+        .from('agent_sessions')
+        .update({ active: false, revoked_at: new Date().toISOString() })
+        .eq('id', data.id);
+      return null;
+    }
+
+    return data as AgentSessionRow;
+  }
+
+  async touchSession(sessionToken: string) {
+    const { data, error } = await this.supabase
+      .from('agent_sessions')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('session_token', sessionToken)
+      .eq('active', true)
+      .select('*')
+      .maybeSingle();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as AgentSessionRow | null;
+  }
+
+  async revokeSession(sessionId: number) {
+    const { data, error } = await this.supabase
+      .from('agent_sessions')
+      .update({ active: false, revoked_at: new Date().toISOString() })
+      .eq('id', sessionId)
+      .select('*')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as AgentSessionRow;
+  }
+
+  async listSessions() {
+    const { data, error } = await this.supabase
+      .from('agent_sessions')
+      .select('id, agent_id, device_id, active, last_seen_at, revoked_at, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw new BadRequestException(error.message);
+
+    const agentIds = [...new Set((data ?? []).map((session) => session.agent_id))] as number[];
+    const deviceIds = [...new Set((data ?? []).map((session) => session.device_id))];
+    const [agentsResult, devicesResult] = await Promise.all([
+      agentIds.length ? this.supabase.from('agents').select('id, code, full_name').in('id', agentIds) : Promise.resolve({ data: [], error: null }),
+      deviceIds.length ? this.supabase.from('devices').select('device_id, label').in('device_id', deviceIds) : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (agentsResult.error) throw new BadRequestException(agentsResult.error.message);
+    if (devicesResult.error) throw new BadRequestException(devicesResult.error.message);
+
+    const agentById = new Map<number, { code: string; full_name: string }>();
+    for (const agent of agentsResult.data ?? []) {
+      agentById.set(agent.id, agent);
+    }
+
+    const deviceById = new Map<string, { label: string }>();
+    for (const device of devicesResult.data ?? []) {
+      deviceById.set(device.device_id, device);
+    }
+
+    return (data ?? []).map((session) => ({
+      ...session,
+      agent_code: agentById.get(session.agent_id)?.code ?? null,
+      agent_name: agentById.get(session.agent_id)?.full_name ?? null,
+      device_label: deviceById.get(session.device_id)?.label ?? null,
+    }));
+  }
+
+  async registerDeviceFromSession(body: { sessionToken: string; deviceId: string; label: string }) {
+    const session = await this.findSessionByToken(body.sessionToken);
+    if (!session) {
+      throw new BadRequestException('Invalid or expired session');
+    }
+
+    if (session.device_id !== body.deviceId) {
+      throw new BadRequestException('This session is bound to another device');
+    }
+
+    const existing = await this.supabase
+      .from('devices')
+      .select('*')
+      .eq('device_id', body.deviceId)
+      .maybeSingle();
+
+    if (existing.error) {
+      throw new BadRequestException(existing.error.message);
+    }
+
+    const patch = {
+      device_id: body.deviceId,
+      label: body.label,
+      agent_id: session.agent_id,
+      status: 'assigned',
+      updated_at: new Date().toISOString(),
+    };
+
+    const result = existing.data
+      ? await this.supabase.from('devices').update(patch).eq('device_id', body.deviceId).select('*').single()
+      : await this.supabase.from('devices').insert(patch).select('*').single();
+
+    if (result.error) throw new BadRequestException(result.error.message);
+    await this.touchSession(body.sessionToken);
+    return result.data as DeviceRow;
   }
 
   async listDevices() {
@@ -231,6 +422,23 @@ export class DatabaseService implements OnModuleInit {
     const { data, error } = await this.supabase
       .from('devices')
       .update({ agent_id: agentId, status: 'assigned', updated_at: new Date().toISOString() })
+      .eq('device_id', deviceId)
+      .select('*')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as DeviceRow;
+  }
+
+  async updateDevice(deviceId: string, body: { label?: string | null; agentId?: number | null; status?: string | null }) {
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (body.label !== undefined) patch.label = body.label;
+    if (body.agentId !== undefined) patch.agent_id = body.agentId;
+    if (body.status !== undefined) patch.status = body.status;
+
+    const { data, error } = await this.supabase
+      .from('devices')
+      .update(patch)
       .eq('device_id', deviceId)
       .select('*')
       .single();
@@ -325,6 +533,7 @@ export class DatabaseService implements OnModuleInit {
     reference: string;
     deviceId: string;
     agentId?: number | null;
+    sessionToken?: string | null;
     serviceType: string;
     route: string;
     amount: number;
@@ -336,24 +545,65 @@ export class DatabaseService implements OnModuleInit {
     receiverPhone?: string | null;
     ticketText?: string | null;
   }) {
-    const { data: device, error: deviceError } = await this.supabase
-      .from('devices')
-      .select('agent_id')
-      .eq('device_id', body.deviceId)
-      .maybeSingle();
+    let agentId = body.agentId ?? null;
+    let deviceId = body.deviceId;
 
-    if (deviceError) throw new BadRequestException(deviceError.message);
+    if (body.sessionToken) {
+      const session = await this.findSessionByToken(body.sessionToken);
+      if (!session) {
+        throw new BadRequestException('Invalid or expired session');
+      }
 
-    const agentId = body.agentId ?? device?.agent_id ?? null;
+      if (session.device_id !== body.deviceId) {
+        throw new BadRequestException('This request does not match the logged device');
+      }
+
+      agentId = session.agent_id;
+      deviceId = session.device_id;
+      await this.touchSession(body.sessionToken);
+    }
+
+    if (!agentId) {
+      const { data: device, error: deviceError } = await this.supabase
+        .from('devices')
+        .select('agent_id')
+        .eq('device_id', deviceId)
+        .maybeSingle();
+
+      if (deviceError) throw new BadRequestException(deviceError.message);
+      agentId = device?.agent_id ?? null;
+    }
+
     if (!agentId) {
       throw new BadRequestException('This device is not assigned to an agent yet');
+    }
+
+    const { data: deviceRow, error: upsertDeviceError } = await this.supabase
+      .from('devices')
+      .select('*')
+      .eq('device_id', deviceId)
+      .maybeSingle();
+
+    if (upsertDeviceError) throw new BadRequestException(upsertDeviceError.message);
+
+    if (!deviceRow) {
+      const { error: createDeviceError } = await this.supabase
+        .from('devices')
+        .insert({
+          device_id: deviceId,
+          label: deviceId,
+          agent_id: agentId,
+          status: 'assigned',
+        });
+
+      if (createDeviceError) throw new BadRequestException(createDeviceError.message);
     }
 
     const { data, error } = await this.supabase
       .from('tickets')
       .insert({
         reference: body.reference,
-        device_id: body.deviceId,
+        device_id: deviceId,
         agent_id: agentId,
         service_type: body.serviceType,
         route: body.route,

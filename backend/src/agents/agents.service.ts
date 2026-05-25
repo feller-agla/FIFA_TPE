@@ -21,8 +21,9 @@ export class AgentsService {
     return this.database.createAgent({ code, fullName, email, password, phone: body.phone?.trim() || null });
   }
 
-  update(id: number, body: { fullName?: string; email?: string; phone?: string; active?: boolean; password?: string }) {
+  update(id: number, body: { code?: string; fullName?: string; email?: string; phone?: string; active?: boolean; password?: string }) {
     return this.database.updateAgent(id, {
+      code: body.code?.trim(),
       fullName: body.fullName?.trim(),
       email: body.email?.trim().toLowerCase(),
       phone: body.phone?.trim(),

@@ -26,10 +26,11 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess, method = 
 
   const onSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setLoading(true);
     setStatus(null);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(formElement);
     const payload: Record<string, unknown> = {};
 
     for (const [key, value] of formData.entries()) {
@@ -83,7 +84,7 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess, method = 
       }
 
       setStatus({ type: 'success', message: 'Enregistré avec succès !' });
-      event.currentTarget.reset();
+      formElement.reset();
       setLoading(false);
   
       if (onSuccess) {

@@ -297,6 +297,13 @@ export default function AgentsPage() {
             onSuccess={handleEditSuccess}
             fields={[
               {
+                name: 'code',
+                label: 'Code agent',
+                placeholder: 'Ex: AGT-001',
+                required: true,
+                initialValue: selectedAgent.code,
+              },
+              {
                 name: 'fullName',
                 label: 'Nom complet',
                 placeholder: 'Ex: Moussa Diallo',

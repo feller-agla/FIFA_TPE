@@ -18,7 +18,7 @@ export class AgentsController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() body: { fullName?: string; email?: string; phone?: string; active?: boolean; password?: string },
+    @Body() body: { code?: string; fullName?: string; email?: string; phone?: string; active?: boolean; password?: string },
   ) {
     return this.agents.update(Number(id), body);
   }

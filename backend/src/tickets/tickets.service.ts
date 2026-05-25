@@ -13,6 +13,7 @@ export class TicketsService {
     reference?: string;
     deviceId?: string;
     agentId?: number;
+    sessionToken?: string;
     serviceType?: string;
     route?: string;
     amount?: number;
@@ -38,6 +39,7 @@ export class TicketsService {
       reference,
       deviceId,
       agentId: body.agentId ?? null,
+      sessionToken: body.sessionToken?.trim() || null,
       serviceType,
       route,
       amount,

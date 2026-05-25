@@ -84,6 +84,7 @@ export default function DevicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
   const fetchDevices = useCallback(async () => {
@@ -116,6 +117,12 @@ export default function DevicesPage() {
     fetchDevices();
   }, [fetchDevices]);
 
+  const handleEditSuccess = useCallback(() => {
+    setShowEditModal(false);
+    setSelectedDevice(null);
+    fetchDevices();
+  }, [fetchDevices]);
+
   // Extend columns with assign action
   const columnsWithAction: Column<Device>[] = [
     ...columns,
@@ -123,17 +130,30 @@ export default function DevicesPage() {
       key: '_actions',
       label: 'Actions',
       render: (row) => (
-        <button
-          className="btn btn-ghost"
-          onClick={() => {
-            setSelectedDevice(row);
-            setShowAssignModal(true);
-          }}
-          type="button"
-          style={{ fontSize: '0.8rem' }}
-        >
-          {row.agent_id ? '🔄 Réassigner' : '🔗 Assigner'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setSelectedDevice(row);
+              setShowEditModal(true);
+            }}
+            type="button"
+            style={{ fontSize: '0.8rem' }}
+          >
+            Modifier
+          </button>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setSelectedDevice(row);
+              setShowAssignModal(true);
+            }}
+            type="button"
+            style={{ fontSize: '0.8rem' }}
+          >
+            {row.agent_id ? '🔄 Réassigner' : '🔗 Assigner'}
+          </button>
+        </div>
       ),
     },
   ];
@@ -301,6 +321,52 @@ export default function DevicesPage() {
                 placeholder: 'Ex: 1',
                 type: 'number',
                 required: true,
+              },
+            ]}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedDevice(null);
+        }}
+        title={`Modifier ${selectedDevice?.label ?? 'le TPE'}`}
+      >
+        {selectedDevice && (
+          <ActionForm
+            key={`edit-device-${selectedDevice.device_id}`}
+            endpoint={`${apiBase}/devices/${selectedDevice.device_id}`}
+            method="PATCH"
+            buttonLabel="Enregistrer les modifications"
+            onSuccess={handleEditSuccess}
+            fields={[
+              {
+                name: 'label',
+                label: 'Libellé',
+                placeholder: 'Ex: Terminal Gare Routière',
+                required: true,
+                initialValue: selectedDevice.label,
+              },
+              {
+                name: 'agentId',
+                label: 'ID Agent',
+                placeholder: 'Ex: 1',
+                type: 'number',
+                initialValue: selectedDevice.agent_id ?? '',
+              },
+              {
+                name: 'status',
+                label: 'Statut',
+                type: 'select',
+                initialValue: selectedDevice.status,
+                options: [
+                  { value: 'pending', label: 'pending' },
+                  { value: 'assigned', label: 'assigned' },
+                  { value: 'revoked', label: 'revoked' },
+                ],
               },
             ]}
           />

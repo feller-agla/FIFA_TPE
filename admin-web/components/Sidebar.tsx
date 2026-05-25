@@ -8,6 +8,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: '📊', section: 'main' },
   { href: '/agents', label: 'Agents', icon: '👤', section: 'main' },
   { href: '/devices', label: 'Terminaux TPE', icon: '📱', section: 'main' },
+  { href: '/sessions', label: 'Sessions', icon: '🔐', section: 'main' },
   { href: '/tickets', label: 'Tickets', icon: '🎫', section: 'main' },
 ];
 

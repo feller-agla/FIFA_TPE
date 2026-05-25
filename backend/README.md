@@ -31,9 +31,19 @@ L'application Android requiert maintenant un login `email/mot de passe` avant d'
 
 Avant d'utiliser cette fonctionnalité, applique la migration [supabase/agent_login_migration.sql](supabase/agent_login_migration.sql) dans Supabase pour ajouter les colonnes `email`, `password_hash` et `password_salt` à la table `agents`.
 
+Applique aussi [supabase/agent_sessions_migration.sql](supabase/agent_sessions_migration.sql) pour créer la table `agent_sessions` qui bloque les connexions simultanées sur plusieurs TPE.
+
 Le nouvel endpoint est:
 
 - `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/sessions`
+- `DELETE /api/auth/sessions/:id`
+
+Le TPE utilise ensuite:
+
+- `POST /api/devices/register`
+- `POST /api/tickets` avec le `sessionToken` de l'agent connecté.
 
 ## Variables d'environnement
 
