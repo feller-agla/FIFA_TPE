@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type Column } from '@/components/DataTable';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Modal } from '@/components/Modal';
+import { ActionForm } from '@/components/ActionForm';
 
 const apiBase = process.env.NEXT_PUBLIC_ADMIN_API_BASE_URL ?? '/api';
 
@@ -125,6 +127,8 @@ export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -144,6 +148,33 @@ export default function TicketsPage() {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  const handleEditSuccess = useCallback(() => {
+    setShowEditModal(false);
+    setSelectedTicket(null);
+    fetchTickets();
+  }, [fetchTickets]);
+
+  const columnsWithAction: Column<Ticket>[] = [
+    ...columns,
+    {
+      key: '_actions',
+      label: 'Actions',
+      render: (row) => (
+        <button
+          className="btn btn-ghost"
+          type="button"
+          style={{ fontSize: '0.8rem' }}
+          onClick={() => {
+            setSelectedTicket(row);
+            setShowEditModal(true);
+          }}
+        >
+          ✏️ Modifier
+        </button>
+      ),
+    },
+  ];
 
   if (loading) {
     return (
@@ -252,7 +283,7 @@ export default function TicketsPage() {
       </div>
 
       <DataTable<Ticket>
-        columns={columns}
+        columns={columnsWithAction}
         data={tickets}
         searchKeys={['reference', 'agent_name', 'agent_code', 'device_label', 'service_type', 'route', 'passenger_name']}
         searchPlaceholder="Rechercher par référence, agent, trajet, passager..."
@@ -261,6 +292,60 @@ export default function TicketsPage() {
         emptyTitle="Aucun ticket"
         emptyDesc="Aucun ticket n'a encore été émis par les TPE."
       />
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedTicket(null);
+        }}
+        title={selectedTicket ? `Modifier le ticket ${selectedTicket.reference}` : 'Modifier le ticket'}
+      >
+        {selectedTicket && (
+          <ActionForm
+            endpoint={`${apiBase}/tickets/${selectedTicket.id}`}
+            method="PATCH"
+            buttonLabel="Enregistrer"
+            onSuccess={handleEditSuccess}
+            fields={[
+              { name: 'reference', label: 'Référence', required: true, initialValue: selectedTicket.reference },
+              { name: 'deviceId', label: 'ID Terminal', required: true, initialValue: selectedTicket.device_id },
+              { name: 'agentId', label: 'ID Agent', type: 'number', required: true, initialValue: selectedTicket.agent_id },
+              {
+                name: 'serviceType',
+                label: 'Service',
+                type: 'select',
+                required: true,
+                initialValue: selectedTicket.service_type,
+                options: [
+                  { value: 'PASSAGER', label: 'PASSAGER' },
+                  { value: 'COLIS', label: 'COLIS' },
+                ],
+              },
+              { name: 'route', label: 'Trajet', required: true, initialValue: selectedTicket.route },
+              { name: 'amount', label: 'Montant', type: 'number', required: true, initialValue: selectedTicket.amount },
+              {
+                name: 'paymentMode',
+                label: 'Paiement',
+                type: 'select',
+                required: true,
+                initialValue: selectedTicket.payment_mode,
+                options: [
+                  { value: 'cash', label: 'cash' },
+                  { value: 'card', label: 'card' },
+                  { value: 'mobile', label: 'mobile' },
+                ],
+              },
+              { name: 'passengerName', label: 'Nom passager', initialValue: selectedTicket.passenger_name ?? '' },
+              { name: 'passengerPhone', label: 'Téléphone passager', initialValue: selectedTicket.passenger_phone ?? '' },
+              { name: 'packageDetails', label: 'Détails colis', initialValue: selectedTicket.package_details ?? '' },
+              { name: 'receiverName', label: 'Nom destinataire', initialValue: selectedTicket.receiver_name ?? '' },
+              { name: 'receiverPhone', label: 'Téléphone destinataire', initialValue: selectedTicket.receiver_phone ?? '' },
+              { name: 'ticketText', label: 'Texte ticket', initialValue: '' },
+            ]}
+          />
+        )}
+      </Modal>
     </>
   );
 }

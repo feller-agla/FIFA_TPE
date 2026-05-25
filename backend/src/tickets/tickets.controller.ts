@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 
 @Controller('tickets')
@@ -31,5 +31,28 @@ export class TicketsController {
     },
   ) {
     return this.tickets.create(body);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body()
+    body: {
+      reference?: string;
+      deviceId?: string;
+      agentId?: number | null;
+      serviceType?: string;
+      route?: string;
+      amount?: number;
+      paymentMode?: string;
+      passengerName?: string | null;
+      passengerPhone?: string | null;
+      packageDetails?: string | null;
+      receiverName?: string | null;
+      receiverPhone?: string | null;
+      ticketText?: string | null;
+    },
+  ) {
+    return this.tickets.update(id, body);
   }
 }

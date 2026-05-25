@@ -52,4 +52,39 @@ export class TicketsService {
       ticketText: body.ticketText?.trim() || null,
     });
   }
+
+  update(
+    id: number,
+    body: {
+      reference?: string;
+      deviceId?: string;
+      agentId?: number | null;
+      serviceType?: string;
+      route?: string;
+      amount?: number;
+      paymentMode?: string;
+      passengerName?: string | null;
+      passengerPhone?: string | null;
+      packageDetails?: string | null;
+      receiverName?: string | null;
+      receiverPhone?: string | null;
+      ticketText?: string | null;
+    },
+  ) {
+    return this.database.updateTicket(id, {
+      reference: body.reference?.trim(),
+      deviceId: body.deviceId?.trim(),
+      agentId: body.agentId ?? undefined,
+      serviceType: body.serviceType?.trim(),
+      route: body.route?.trim(),
+      amount: body.amount,
+      paymentMode: body.paymentMode?.trim(),
+      passengerName: body.passengerName?.trim() ?? null,
+      passengerPhone: body.passengerPhone?.trim() ?? null,
+      packageDetails: body.packageDetails?.trim() ?? null,
+      receiverName: body.receiverName?.trim() ?? null,
+      receiverPhone: body.receiverPhone?.trim() ?? null,
+      ticketText: body.ticketText?.trim() ?? null,
+    });
+  }
 }

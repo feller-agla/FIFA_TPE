@@ -622,4 +622,52 @@ export class DatabaseService implements OnModuleInit {
     if (error) throw new BadRequestException(error.message);
     return data as TicketRow;
   }
+
+  async updateTicket(
+    id: number,
+    body: {
+      reference?: string;
+      deviceId?: string;
+      agentId?: number;
+      serviceType?: string;
+      route?: string;
+      amount?: number;
+      paymentMode?: string;
+      passengerName?: string | null;
+      passengerPhone?: string | null;
+      packageDetails?: string | null;
+      receiverName?: string | null;
+      receiverPhone?: string | null;
+      ticketText?: string | null;
+    },
+  ) {
+    const patch: Record<string, unknown> = {};
+    if (body.reference !== undefined) patch.reference = body.reference;
+    if (body.deviceId !== undefined) patch.device_id = body.deviceId;
+    if (body.agentId !== undefined) patch.agent_id = body.agentId;
+    if (body.serviceType !== undefined) patch.service_type = body.serviceType;
+    if (body.route !== undefined) patch.route = body.route;
+    if (body.amount !== undefined) patch.amount = body.amount;
+    if (body.paymentMode !== undefined) patch.payment_mode = body.paymentMode;
+    if (body.passengerName !== undefined) patch.passenger_name = body.passengerName;
+    if (body.passengerPhone !== undefined) patch.passenger_phone = body.passengerPhone;
+    if (body.packageDetails !== undefined) patch.package_details = body.packageDetails;
+    if (body.receiverName !== undefined) patch.receiver_name = body.receiverName;
+    if (body.receiverPhone !== undefined) patch.receiver_phone = body.receiverPhone;
+    if (body.ticketText !== undefined) patch.ticket_text = body.ticketText;
+
+    if (Object.keys(patch).length === 0) {
+      throw new BadRequestException('No ticket fields provided');
+    }
+
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .update(patch)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as TicketRow;
+  }
 }
