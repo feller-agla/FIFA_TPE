@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { DataTable, type Column } from '@/components/DataTable';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -73,6 +73,8 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchAgents = useCallback(async () => {
     try {
@@ -97,6 +99,33 @@ export default function AgentsPage() {
     setShowModal(false);
     fetchAgents();
   }, [fetchAgents]);
+
+  const handleEditSuccess = useCallback(() => {
+    setShowEditModal(false);
+    setSelectedAgent(null);
+    fetchAgents();
+  }, [fetchAgents]);
+
+  const columnsWithAction = useMemo<Column<Agent>[]>(() => [
+    ...columns,
+    {
+      key: '_actions',
+      label: 'Actions',
+      render: (row) => (
+        <button
+          className="btn btn-ghost"
+          onClick={() => {
+            setSelectedAgent(row);
+            setShowEditModal(true);
+          }}
+          type="button"
+          style={{ fontSize: '0.8rem' }}
+        >
+          ✏️ Modifier
+        </button>
+      ),
+    },
+  ], []);
 
   if (loading) {
     return (
@@ -197,7 +226,7 @@ export default function AgentsPage() {
       </div>
 
       <DataTable<Agent>
-        columns={columns}
+        columns={columnsWithAction}
         data={agents}
         searchKeys={['code', 'full_name', 'phone']}
         searchPlaceholder="Rechercher un agent par nom, code ou téléphone..."
@@ -250,6 +279,65 @@ export default function AgentsPage() {
             },
           ]}
         />
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedAgent(null);
+        }}
+        title={`Modifier l'agent : ${selectedAgent?.full_name ?? ''}`}
+      >
+        {selectedAgent && (
+          <ActionForm
+            endpoint={`${apiBase}/agents/${selectedAgent.id}`}
+            method="PATCH"
+            buttonLabel="Enregistrer les modifications"
+            onSuccess={handleEditSuccess}
+            fields={[
+              {
+                name: 'fullName',
+                label: 'Nom complet',
+                placeholder: 'Ex: Moussa Diallo',
+                required: true,
+                initialValue: selectedAgent.full_name,
+              },
+              {
+                name: 'email',
+                label: 'Email',
+                placeholder: 'Ex: moussa@fifa-transport.tg',
+                required: true,
+                type: 'email',
+                initialValue: selectedAgent.email ?? '',
+              },
+              {
+                name: 'phone',
+                label: 'Téléphone',
+                placeholder: 'Ex: +221 77 123 4567',
+                initialValue: selectedAgent.phone ?? '',
+              },
+              {
+                name: 'active',
+                label: 'Statut de l\'agent',
+                type: 'select',
+                required: true,
+                initialValue: String(selectedAgent.active),
+                options: [
+                  { value: 'true', label: 'Actif' },
+                  { value: 'false', label: 'Inactif' },
+                ],
+              },
+              {
+                name: 'password',
+                label: 'Nouveau mot de passe (optionnel)',
+                placeholder: 'Laisser vide pour ne pas modifier',
+                type: 'password',
+                required: false,
+              },
+            ]}
+          />
+        )}
       </Modal>
     </>
   );

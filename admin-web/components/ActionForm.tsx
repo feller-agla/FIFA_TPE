@@ -5,9 +5,11 @@ import { useState, useCallback } from 'react';
 type Field = {
   name: string;
   label: string;
-  placeholder: string;
+  placeholder?: string;
   type?: string;
   required?: boolean;
+  initialValue?: string | number | boolean;
+  options?: { value: string; label: string }[];
 };
 
 type ActionFormProps = {
@@ -15,9 +17,10 @@ type ActionFormProps = {
   fields: Field[];
   buttonLabel: string;
   onSuccess?: () => void;
+  method?: 'POST' | 'PATCH' | 'PUT';
 };
 
-export function ActionForm({ endpoint, fields, buttonLabel, onSuccess }: ActionFormProps) {
+export function ActionForm({ endpoint, fields, buttonLabel, onSuccess, method = 'POST' }: ActionFormProps) {
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -30,9 +33,16 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess }: ActionF
     const payload: Record<string, unknown> = {};
 
     for (const [key, value] of formData.entries()) {
+      if (key === 'password' && value === '') {
+        continue;
+      }
       const field = fields.find((f) => f.name === key);
       if (field?.type === 'number' && value !== '') {
         payload[key] = Number(value);
+      } else if (value === 'true') {
+        payload[key] = true;
+      } else if (value === 'false') {
+        payload[key] = false;
       } else {
         payload[key] = value;
       }
@@ -40,13 +50,13 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess }: ActionF
 
     try {
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        let errorMessage = 'Erreur lors de la création';
+        let errorMessage = method === 'POST' ? 'Erreur lors de la création' : 'Erreur lors de la modification';
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
@@ -75,17 +85,22 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess }: ActionF
       setStatus({ type: 'success', message: 'Enregistré avec succès !' });
       event.currentTarget.reset();
       setLoading(false);
-
+  
       if (onSuccess) {
         setTimeout(() => {
           onSuccess();
         }, 800);
       }
-    } catch {
-      setStatus({ type: 'error', message: 'Erreur réseau. Vérifiez votre connexion.' });
+    } catch (err) {
+      console.error("Erreur d'envoi du formulaire (ActionForm):", err);
+      const detail = err instanceof Error ? `: ${err.message}` : '';
+      setStatus({
+        type: 'error',
+        message: `Erreur réseau${detail}. Vérifiez votre connexion et les logs de la console.`,
+      });
       setLoading(false);
     }
-  }, [endpoint, fields, onSuccess]);
+  }, [endpoint, fields, onSuccess, method]);
 
   return (
     <form onSubmit={onSubmit} className="form-grid" id="action-form">
@@ -95,14 +110,31 @@ export function ActionForm({ endpoint, fields, buttonLabel, onSuccess }: ActionF
             {field.label}
             {field.required && <span className="text-danger"> *</span>}
           </label>
-          <input
-            className="form-input"
-            id={`field-${field.name}`}
-            name={field.name}
-            placeholder={field.placeholder}
-            type={field.type ?? 'text'}
-            required={field.required}
-          />
+          {field.type === 'select' ? (
+            <select
+              className="form-input"
+              id={`field-${field.name}`}
+              name={field.name}
+              defaultValue={field.initialValue !== undefined ? String(field.initialValue) : undefined}
+              required={field.required}
+            >
+              {field.options?.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              className="form-input"
+              id={`field-${field.name}`}
+              name={field.name}
+              placeholder={field.placeholder}
+              type={field.type ?? 'text'}
+              required={field.required}
+              defaultValue={field.initialValue !== undefined ? String(field.initialValue) : undefined}
+            />
+          )}
         </div>
       ))}
 

@@ -291,6 +291,7 @@ export default function DevicesPage() {
         {selectedDevice && (
           <ActionForm
             endpoint={`${apiBase}/devices/${selectedDevice.device_id}/assign`}
+            method="PATCH"
             buttonLabel="Assigner l'agent"
             onSuccess={handleAssignSuccess}
             fields={[
