@@ -1,13 +1,20 @@
 import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'crypto';
 
 export type AgentRow = {
   id: number;
   code: string;
   full_name: string;
+  email: string | null;
   phone: string | null;
   active: boolean;
   created_at: string;
+};
+
+export type AgentAuthRow = AgentRow & {
+  password_hash: string;
+  password_salt: string;
 };
 
 export type DeviceRow = {
@@ -67,44 +74,86 @@ export class DatabaseService implements OnModuleInit {
   async listAgents() {
     const { data, error } = await this.supabase
       .from('agents')
-      .select('*')
+      .select('id, code, full_name, email, phone, active, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw new BadRequestException(error.message);
     return data as AgentRow[];
   }
 
-  async createAgent(body: { code: string; fullName: string; phone?: string | null }) {
+  async createAgent(body: { code: string; fullName: string; email: string; password: string; phone?: string | null }) {
+    const { salt, hash } = this.hashPassword(body.password);
     const { data, error } = await this.supabase
       .from('agents')
       .insert({
         code: body.code,
         full_name: body.fullName,
+        email: body.email,
+        password_hash: hash,
+        password_salt: salt,
         phone: body.phone ?? null,
         active: true,
       })
-      .select('*')
+      .select('id, code, full_name, email, phone, active, created_at')
       .single();
 
     if (error) throw new BadRequestException(error.message);
     return data as AgentRow;
   }
 
-  async updateAgent(id: number, body: { fullName?: string; phone?: string | null; active?: boolean }) {
+  async updateAgent(
+    id: number,
+    body: { fullName?: string; email?: string | null; phone?: string | null; active?: boolean; password?: string | null },
+  ) {
     const patch: Record<string, unknown> = {};
     if (body.fullName !== undefined) patch.full_name = body.fullName;
+    if (body.email !== undefined) patch.email = body.email;
     if (body.phone !== undefined) patch.phone = body.phone;
     if (body.active !== undefined) patch.active = body.active;
+    if (body.password) {
+      const { salt, hash } = this.hashPassword(body.password);
+      patch.password_hash = hash;
+      patch.password_salt = salt;
+    }
 
     const { data, error } = await this.supabase
       .from('agents')
       .update(patch)
       .eq('id', id)
-      .select('*')
+      .select('id, code, full_name, email, phone, active, created_at')
       .single();
 
     if (error) throw new BadRequestException(error.message);
     return data as AgentRow;
+  }
+
+  async findAgentAuthByEmail(email: string) {
+    const { data, error } = await this.supabase
+      .from('agents')
+      .select('id, code, full_name, email, phone, active, created_at, password_hash, password_salt')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error) throw new BadRequestException(error.message);
+    return data as AgentAuthRow | null;
+  }
+
+  verifyPassword(password: string, salt: string, expectedHash: string) {
+    const computedHash = pbkdf2Sync(password, salt, 120000, 64, 'sha512').toString('hex');
+    const computedBuffer = Buffer.from(computedHash, 'hex');
+    const expectedBuffer = Buffer.from(expectedHash, 'hex');
+
+    if (computedBuffer.length !== expectedBuffer.length) {
+      return false;
+    }
+
+    return timingSafeEqual(computedBuffer, expectedBuffer);
+  }
+
+  private hashPassword(password: string) {
+    const salt = randomBytes(16).toString('hex');
+    const hash = pbkdf2Sync(password, salt, 120000, 64, 'sha512').toString('hex');
+    return { salt, hash };
   }
 
   async listDevices() {
@@ -135,6 +184,34 @@ export class DatabaseService implements OnModuleInit {
   }
 
   async createDevice(body: { deviceId: string; label: string; agentId?: number | null }) {
+    const existing = await this.supabase
+      .from('devices')
+      .select('*')
+      .eq('device_id', body.deviceId)
+      .maybeSingle();
+
+    if (existing.error) {
+      throw new BadRequestException(existing.error.message);
+    }
+
+    if (existing.data) {
+      const patch: Record<string, unknown> = { label: body.label };
+      if (body.agentId !== undefined && body.agentId !== null) {
+        patch.agent_id = body.agentId;
+        patch.status = 'assigned';
+      }
+
+      const { data, error } = await this.supabase
+        .from('devices')
+        .update(patch)
+        .eq('device_id', body.deviceId)
+        .select('*')
+        .single();
+
+      if (error) throw new BadRequestException(error.message);
+      return data as DeviceRow;
+    }
+
     const { data, error } = await this.supabase
       .from('devices')
       .insert({

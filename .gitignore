@@ -10,6 +10,7 @@ node_modules
 /backend/storage
 /backend/.env
 /backend/.env.*
+/backend/supabase
 /admin-web/node_modules
 /admin-web/.next
 /admin-web/.env

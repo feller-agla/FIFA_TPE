@@ -9,6 +9,32 @@ Backend NestJS pour centraliser les tickets, les agents et les TPE via Supabase.
 - L’application Android `app/` n’est pas publiée en ligne; elle reste installée sur les TPE physiques.
 - Tous les terminaux parlent au même backend et à la même base Supabase.
 
+## Hébergement sur Render
+
+Déploiement recommandé:
+
+1. Créer un nouveau projet Render, puis ajouter un Web Service depuis le dépôt GitHub.
+2. Choisir le mode manuel, pas le blueprint.
+3. Renseigner:
+	- Root directory: `backend`
+	- Build command: `npm install && npm run build`
+	- Start command: `npm run start`
+4. Ajouter les variables d'environnement dans Render:
+	- `NEXT_PUBLIC_SUPABASE_URL`
+	- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+	- `SUPABASE_SERVICE_ROLE_KEY`
+5. Déployer puis tester `GET /api/health`.
+
+## Authentification des agents
+
+L'application Android requiert maintenant un login `email/mot de passe` avant d'accéder au TPE.
+
+Avant d'utiliser cette fonctionnalité, applique la migration [supabase/agent_login_migration.sql](supabase/agent_login_migration.sql) dans Supabase pour ajouter les colonnes `email`, `password_hash` et `password_salt` à la table `agents`.
+
+Le nouvel endpoint est:
+
+- `POST /api/auth/login`
+
 ## Variables d'environnement
 
 ```bash

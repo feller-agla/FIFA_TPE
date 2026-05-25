@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AgentsController } from './agents/agents.controller';
 import { AgentsService } from './agents/agents.service';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
 import { DatabaseModule } from './database/database.module';
 import { DevicesController } from './devices/devices.controller';
 import { DevicesService } from './devices/devices.service';
@@ -14,10 +16,11 @@ import { DashboardController } from './dashboard.controller';
   controllers: [
     HealthController,
     DashboardController,
+    AuthController,
     AgentsController,
     DevicesController,
     TicketsController,
   ],
-  providers: [AgentsService, DevicesService, TicketsService],
+  providers: [AgentsService, AuthService, DevicesService, TicketsService],
 })
 export class AppModule {}

@@ -11,14 +11,14 @@ export class AgentsController {
   }
 
   @Post()
-  create(@Body() body: { code?: string; fullName?: string; phone?: string }) {
+  create(@Body() body: { code?: string; fullName?: string; email?: string; password?: string; phone?: string }) {
     return this.agents.create(body);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() body: { fullName?: string; phone?: string; active?: boolean },
+    @Body() body: { fullName?: string; email?: string; phone?: string; active?: boolean; password?: string },
   ) {
     return this.agents.update(Number(id), body);
   }
