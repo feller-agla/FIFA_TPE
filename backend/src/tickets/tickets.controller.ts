@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, ParseIntPipe, Query } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 
 @Controller('tickets')
@@ -8,6 +8,11 @@ export class TicketsController {
   @Get()
   findAll() {
     return this.tickets.findAll();
+  }
+
+  @Get('passengers')
+  findPassengers(@Query('q') query?: string) {
+    return this.tickets.findPassengers(query);
   }
 
   @Post()

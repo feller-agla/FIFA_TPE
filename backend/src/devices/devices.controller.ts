@@ -10,6 +10,11 @@ export class DevicesController {
     return this.devices.findAll();
   }
 
+  @Get('next-id')
+  nextId() {
+    return this.devices.nextId();
+  }
+
   @Post()
   create(@Body() body: { deviceId?: string; label?: string; agentId?: number }) {
     return this.devices.create(body);

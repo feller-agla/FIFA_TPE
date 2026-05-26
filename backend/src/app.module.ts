@@ -10,6 +10,8 @@ import { HealthController } from './health.controller';
 import { TicketsController } from './tickets/tickets.controller';
 import { TicketsService } from './tickets/tickets.service';
 import { DashboardController } from './dashboard.controller';
+import { PricesController } from './prices/prices.controller';
+import { PricesService } from './prices/prices.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -20,7 +22,8 @@ import { DashboardController } from './dashboard.controller';
     AgentsController,
     DevicesController,
     TicketsController,
+    PricesController,
   ],
-  providers: [AgentsService, AuthService, DevicesService, TicketsService],
+  providers: [AgentsService, AuthService, DevicesService, TicketsService, PricesService],
 })
 export class AppModule {}

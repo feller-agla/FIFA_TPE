@@ -9,6 +9,10 @@ export class TicketsService {
     return this.database.listTickets();
   }
 
+  findPassengers(query?: string) {
+    return this.database.searchPassengerSuggestions(query);
+  }
+
   create(body: {
     reference?: string;
     deviceId?: string;

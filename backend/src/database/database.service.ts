@@ -45,6 +45,13 @@ export type TicketRow = {
   created_at: string;
 };
 
+export type PassengerSuggestionRow = {
+  passenger_name: string;
+  passenger_phone: string | null;
+  ticket_count: number;
+  last_seen_at: string;
+};
+
 export type AgentSessionRow = {
   id: number;
   agent_id: number;
@@ -374,6 +381,23 @@ export class DatabaseService implements OnModuleInit {
     }));
   }
 
+  async nextDeviceId() {
+    const { data, error } = await this.supabase
+      .from('devices')
+      .select('device_id');
+
+    if (error) throw new BadRequestException(error.message);
+
+    const nextNumber = (data ?? [])
+      .map((device) => {
+        const match = /^TPE-(\d+)$/.exec(device.device_id);
+        return match ? Number(match[1]) : 0;
+      })
+      .reduce((max, value) => Math.max(max, value), 0) + 1;
+
+    return { deviceId: `TPE-${nextNumber}` };
+  }
+
   async createDevice(body: { deviceId: string; label: string; agentId?: number | null }) {
     const existing = await this.supabase
       .from('devices')
@@ -669,5 +693,67 @@ export class DatabaseService implements OnModuleInit {
 
     if (error) throw new BadRequestException(error.message);
     return data as TicketRow;
+  }
+
+  async searchPassengerSuggestions(query?: string) {
+    const normalized = query?.trim() ?? '';
+    if (normalized.length < 1) {
+      return [];
+    }
+
+    const { data, error } = await this.supabase
+      .from('tickets')
+      .select('passenger_name, passenger_phone, created_at')
+      .not('passenger_name', 'is', null)
+      .ilike('passenger_name', `${normalized}%`)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) throw new BadRequestException(error.message);
+
+    const seen = new Map<string, PassengerSuggestionRow>();
+    for (const row of data ?? []) {
+      const passengerName = String(row.passenger_name ?? '').trim();
+      if (!passengerName) continue;
+      const passengerPhone = row.passenger_phone ? String(row.passenger_phone).trim() : null;
+      const key = `${passengerName.toLowerCase()}|${passengerPhone ?? ''}`;
+      if (!seen.has(key)) {
+        seen.set(key, {
+          passenger_name: passengerName,
+          passenger_phone: passengerPhone,
+          ticket_count: 1,
+          last_seen_at: row.created_at,
+        });
+      } else {
+        const existing = seen.get(key)!;
+        existing.ticket_count += 1;
+        if (new Date(row.created_at).getTime() > new Date(existing.last_seen_at).getTime()) {
+          existing.last_seen_at = row.created_at;
+        }
+      }
+    }
+    return [...seen.values()].slice(0, 10);
+  }
+
+  async listPrices() {
+    const { data, error } = await this.supabase
+      .from('prices')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) throw new BadRequestException(error.message);
+    return data;
+  }
+
+  async updatePrice(id: string, amount: number) {
+    const { data, error } = await this.supabase
+      .from('prices')
+      .update({ amount, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw new BadRequestException(error.message);
+    return data;
   }
 }

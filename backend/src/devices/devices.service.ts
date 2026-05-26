@@ -9,6 +9,10 @@ export class DevicesService {
     return this.database.listDevices();
   }
 
+  nextId() {
+    return this.database.nextDeviceId();
+  }
+
   create(body: { deviceId?: string; label?: string; agentId?: number }) {
     const deviceId = body.deviceId?.trim();
     const label = body.label?.trim();

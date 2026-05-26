@@ -10,6 +10,7 @@ const navItems = [
   { href: '/devices', label: 'Terminaux TPE', icon: '📱', section: 'main' },
   { href: '/sessions', label: 'Sessions', icon: '🔐', section: 'main' },
   { href: '/tickets', label: 'Tickets', icon: '🎫', section: 'main' },
+  { href: '/prices', label: 'Tarifs & Bilans', icon: '💵', section: 'main' },
 ];
 
 type SidebarProps = {
