@@ -12,6 +12,8 @@ import { TicketsService } from './tickets/tickets.service';
 import { DashboardController } from './dashboard.controller';
 import { PricesController } from './prices/prices.controller';
 import { PricesService } from './prices/prices.service';
+import { ConfigController } from './config/config.controller';
+import { ConfigService } from './config/config.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -23,7 +25,15 @@ import { PricesService } from './prices/prices.service';
     DevicesController,
     TicketsController,
     PricesController,
+    ConfigController,
   ],
-  providers: [AgentsService, AuthService, DevicesService, TicketsService, PricesService],
+  providers: [
+    AgentsService,
+    AuthService,
+    DevicesService,
+    TicketsService,
+    PricesService,
+    ConfigService,
+  ],
 })
 export class AppModule {}

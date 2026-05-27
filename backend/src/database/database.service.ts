@@ -39,6 +39,8 @@ export type TicketRow = {
   passenger_name: string | null;
   passenger_phone: string | null;
   package_details: string | null;
+  sender_name: string | null;
+  sender_phone: string | null;
   receiver_name: string | null;
   receiver_phone: string | null;
   ticket_text: string | null;
@@ -69,6 +71,16 @@ const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 export class DatabaseService implements OnModuleInit {
   private supabase!: SupabaseClient;
 
+  private localConfig: Record<string, string> = {
+    company_name: 'FIFA Transport',
+    company_ifu: '3202612345678',
+    company_rccm: 'RB-COT-26-B-1234',
+    company_address: 'Avenue Steinmetz, Cotonou',
+    company_phone: '+229 21 30 00 00',
+    company_city: 'Cotonou',
+    company_country: 'Bénin',
+  };
+
   onModuleInit() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
     const key =
@@ -89,6 +101,10 @@ export class DatabaseService implements OnModuleInit {
         autoRefreshToken: false,
       },
     });
+
+    const { salt, hash } = this.hashPassword('admin');
+    this.localConfig.admin_password_hash = hash;
+    this.localConfig.admin_password_salt = salt;
   }
 
   async listAgents() {
@@ -565,6 +581,8 @@ export class DatabaseService implements OnModuleInit {
     passengerName?: string | null;
     passengerPhone?: string | null;
     packageDetails?: string | null;
+    senderName?: string | null;
+    senderPhone?: string | null;
     receiverName?: string | null;
     receiverPhone?: string | null;
     ticketText?: string | null;
@@ -636,6 +654,8 @@ export class DatabaseService implements OnModuleInit {
         passenger_name: body.passengerName ?? null,
         passenger_phone: body.passengerPhone ?? null,
         package_details: body.packageDetails ?? null,
+        sender_name: body.senderName ?? null,
+        sender_phone: body.senderPhone ?? null,
         receiver_name: body.receiverName ?? null,
         receiver_phone: body.receiverPhone ?? null,
         ticket_text: body.ticketText ?? null,
@@ -660,6 +680,8 @@ export class DatabaseService implements OnModuleInit {
       passengerName?: string | null;
       passengerPhone?: string | null;
       packageDetails?: string | null;
+      senderName?: string | null;
+      senderPhone?: string | null;
       receiverName?: string | null;
       receiverPhone?: string | null;
       ticketText?: string | null;
@@ -676,6 +698,8 @@ export class DatabaseService implements OnModuleInit {
     if (body.passengerName !== undefined) patch.passenger_name = body.passengerName;
     if (body.passengerPhone !== undefined) patch.passenger_phone = body.passengerPhone;
     if (body.packageDetails !== undefined) patch.package_details = body.packageDetails;
+    if (body.senderName !== undefined) patch.sender_name = body.senderName;
+    if (body.senderPhone !== undefined) patch.sender_phone = body.senderPhone;
     if (body.receiverName !== undefined) patch.receiver_name = body.receiverName;
     if (body.receiverPhone !== undefined) patch.receiver_phone = body.receiverPhone;
     if (body.ticketText !== undefined) patch.ticket_text = body.ticketText;
@@ -755,5 +779,111 @@ export class DatabaseService implements OnModuleInit {
 
     if (error) throw new BadRequestException(error.message);
     return data;
+  }
+
+  async listConfig() {
+    try {
+      const { data, error } = await this.supabase
+        .from('config')
+        .select('*');
+
+      if (error) {
+        if (error.message.includes("Could not find the table")) {
+          return Object.entries(this.localConfig).map(([id, value]) => ({ id, value }));
+        }
+        throw new BadRequestException(error.message);
+      }
+
+      if (!data || data.length === 0) {
+        const { salt, hash } = this.hashPassword('admin');
+        const defaults = [
+          { id: 'company_name', value: 'FIFA Transport' },
+          { id: 'company_ifu', value: '3202612345678' },
+          { id: 'company_rccm', value: 'RB-COT-26-B-1234' },
+          { id: 'company_address', value: 'Avenue Steinmetz, Cotonou' },
+          { id: 'company_phone', value: '+229 21 30 00 00' },
+          { id: 'company_city', value: 'Cotonou' },
+          { id: 'company_country', value: 'Bénin' },
+          { id: 'admin_password_hash', value: hash },
+          { id: 'admin_password_salt', value: salt }
+        ];
+
+        const { error: insertError } = await this.supabase
+          .from('config')
+          .insert(defaults);
+        if (insertError) throw new BadRequestException(insertError.message);
+        
+        const { data: refetched } = await this.supabase.from('config').select('*');
+        return refetched || [];
+      }
+
+      return data;
+    } catch {
+      return Object.entries(this.localConfig).map(([id, value]) => ({ id, value }));
+    }
+  }
+
+  async updateConfigValue(id: string, value: string) {
+    try {
+      const { data, error } = await this.supabase
+        .from('config')
+        .update({ value, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        if (error.message.includes("Could not find the table")) {
+          this.localConfig[id] = value;
+          return { id, value };
+        }
+        throw new BadRequestException(error.message);
+      }
+      return data;
+    } catch {
+      this.localConfig[id] = value;
+      return { id, value };
+    }
+  }
+
+  async verifyAdminPassword(password: string): Promise<boolean> {
+    try {
+      const { data, error } = await this.supabase
+        .from('config')
+        .select('*')
+        .in('id', ['admin_password_hash', 'admin_password_salt']);
+
+      if (error) {
+        if (error.message.includes("Could not find the table")) {
+          const hash = this.localConfig.admin_password_hash;
+          const salt = this.localConfig.admin_password_salt;
+          return this.verifyPassword(password, salt, hash);
+        }
+        throw new BadRequestException(error.message);
+      }
+      if (!data || data.length < 2) {
+        return password === 'admin';
+      }
+
+      const hashRow = data.find(r => r.id === 'admin_password_hash');
+      const saltRow = data.find(r => r.id === 'admin_password_salt');
+
+      if (!hashRow || !saltRow) return false;
+
+      return this.verifyPassword(password, saltRow.value, hashRow.value);
+    } catch {
+      const hash = this.localConfig.admin_password_hash;
+      const salt = this.localConfig.admin_password_salt;
+      return this.verifyPassword(password, salt, hash);
+    }
+  }
+
+  async changeAdminPassword(password: string) {
+    const { salt, hash } = this.hashPassword(password);
+    await Promise.all([
+      this.updateConfigValue('admin_password_hash', hash),
+      this.updateConfigValue('admin_password_salt', salt)
+    ]);
+    return { success: true };
   }
 }

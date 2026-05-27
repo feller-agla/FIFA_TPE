@@ -62,6 +62,29 @@ export class AuthService {
     return { success: true };
   }
 
+  async checkSession(body: { sessionToken?: string }) {
+    const sessionToken = body.sessionToken?.trim();
+    if (!sessionToken) {
+      return { active: false };
+    }
+
+    const session = await this.database.findSessionByToken(sessionToken);
+    if (!session) {
+      return { active: false };
+    }
+
+    await this.database.touchSession(sessionToken);
+    return {
+      active: true,
+      session: {
+        id: session.id,
+        agent_id: session.agent_id,
+        device_id: session.device_id,
+        last_seen_at: session.last_seen_at,
+      },
+    };
+  }
+
   async listSessions() {
     return this.database.listSessions();
   }

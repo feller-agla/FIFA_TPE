@@ -30,6 +30,8 @@ export class TicketsController {
       passengerName?: string;
       passengerPhone?: string;
       packageDetails?: string;
+      senderName?: string;
+      senderPhone?: string;
       receiverName?: string;
       receiverPhone?: string;
       ticketText?: string;
@@ -53,6 +55,8 @@ export class TicketsController {
       passengerName?: string | null;
       passengerPhone?: string | null;
       packageDetails?: string | null;
+      senderName?: string | null;
+      senderPhone?: string | null;
       receiverName?: string | null;
       receiverPhone?: string | null;
       ticketText?: string | null;

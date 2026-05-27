@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -13,6 +13,11 @@ export class AuthController {
   @Post('logout')
   logout(@Body() body: { sessionToken?: string }) {
     return this.auth.logout(body);
+  }
+
+  @Get('session')
+  checkSession(@Query('sessionToken') sessionToken?: string) {
+    return this.auth.checkSession({ sessionToken });
   }
 
   @Get('sessions')

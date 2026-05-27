@@ -25,6 +25,8 @@ export class TicketsService {
     passengerName?: string;
     passengerPhone?: string;
     packageDetails?: string;
+    senderName?: string;
+    senderPhone?: string;
     receiverName?: string;
     receiverPhone?: string;
     ticketText?: string;
@@ -51,6 +53,8 @@ export class TicketsService {
       passengerName: body.passengerName?.trim() || null,
       passengerPhone: body.passengerPhone?.trim() || null,
       packageDetails: body.packageDetails?.trim() || null,
+      senderName: body.senderName?.trim() || null,
+      senderPhone: body.senderPhone?.trim() || null,
       receiverName: body.receiverName?.trim() || null,
       receiverPhone: body.receiverPhone?.trim() || null,
       ticketText: body.ticketText?.trim() || null,
@@ -70,6 +74,8 @@ export class TicketsService {
       passengerName?: string | null;
       passengerPhone?: string | null;
       packageDetails?: string | null;
+      senderName?: string | null;
+      senderPhone?: string | null;
       receiverName?: string | null;
       receiverPhone?: string | null;
       ticketText?: string | null;
@@ -86,6 +92,8 @@ export class TicketsService {
       passengerName: body.passengerName?.trim() ?? null,
       passengerPhone: body.passengerPhone?.trim() ?? null,
       packageDetails: body.packageDetails?.trim() ?? null,
+      senderName: body.senderName?.trim() ?? null,
+      senderPhone: body.senderPhone?.trim() ?? null,
       receiverName: body.receiverName?.trim() ?? null,
       receiverPhone: body.receiverPhone?.trim() ?? null,
       ticketText: body.ticketText?.trim() ?? null,
