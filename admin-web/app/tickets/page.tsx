@@ -28,6 +28,7 @@ type Ticket = {
   sender_phone: string | null;
   receiver_name: string | null;
   receiver_phone: string | null;
+  ticket_text: string | null;
   created_at: string;
 };
 
@@ -350,7 +351,7 @@ export default function TicketsPage() {
               { name: 'senderPhone', label: 'Téléphone expéditeur', initialValue: selectedTicket.sender_phone ?? '' },
               { name: 'receiverName', label: 'Nom destinataire', initialValue: selectedTicket.receiver_name ?? '' },
               { name: 'receiverPhone', label: 'Téléphone destinataire', initialValue: selectedTicket.receiver_phone ?? '' },
-              { name: 'ticketText', label: 'Texte ticket', initialValue: '' },
+              { name: 'ticketText', label: 'Texte ticket', initialValue: selectedTicket.ticket_text ?? '' },
             ]}
           />
         )}

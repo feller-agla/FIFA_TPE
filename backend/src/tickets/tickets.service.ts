@@ -5,8 +5,8 @@ import { DatabaseService } from '../database/database.service';
 export class TicketsService {
   constructor(private readonly database: DatabaseService) {}
 
-  findAll() {
-    return this.database.listTickets();
+  findAll(agentId?: number) {
+    return this.database.listTickets(agentId);
   }
 
   findPassengers(query?: string) {

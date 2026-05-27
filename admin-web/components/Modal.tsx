@@ -8,9 +8,10 @@ type ModalProps = {
   title: string;
   children: ReactNode;
   footer?: ReactNode;
+  size?: 'sm' | 'md' | 'lg';
 };
 
-export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
   }, [onClose]);
@@ -39,7 +40,7 @@ export function Modal({ isOpen, onClose, title, children, footer }: ModalProps) 
       aria-labelledby="modal-title"
       id="modal-overlay"
     >
-      <div className="modal">
+      <div className={`modal modal-${size}`}>
         <div className="modal-header">
           <h2 className="modal-title" id="modal-title">{title}</h2>
           <button

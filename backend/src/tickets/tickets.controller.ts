@@ -6,8 +6,8 @@ export class TicketsController {
   constructor(private readonly tickets: TicketsService) {}
 
   @Get()
-  findAll() {
-    return this.tickets.findAll();
+  findAll(@Query('agentId') agentId?: string) {
+    return this.tickets.findAll(agentId ? parseInt(agentId, 10) : undefined);
   }
 
   @Get('passengers')

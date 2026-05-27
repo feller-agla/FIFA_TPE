@@ -533,11 +533,17 @@ export class DatabaseService implements OnModuleInit {
     };
   }
 
-  async listTickets() {
-    const { data, error } = await this.supabase
+  async listTickets(agentId?: number) {
+    let query = this.supabase
       .from('tickets')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (agentId !== undefined) {
+      query = query.eq('agent_id', agentId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw new BadRequestException(error.message);
 
