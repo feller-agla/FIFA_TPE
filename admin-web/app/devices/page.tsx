@@ -151,7 +151,7 @@ export default function DevicesPage() {
             type="button"
             style={{ fontSize: '0.8rem' }}
           >
-            {row.agent_id ? '🔄 Réassigner' : '🔗 Assigner'}
+            {row.agent_id ? 'Réassigner' : 'Assigner'}
           </button>
         </div>
       ),
@@ -195,7 +195,7 @@ export default function DevicesPage() {
         />
         <div className="card">
           <div className="empty-state">
-            <div className="empty-state-icon">⚠️</div>
+            <div className="empty-state-icon"></div>
             <div className="empty-state-title">Erreur de chargement</div>
             <div className="empty-state-desc">{error}</div>
             <button className="btn btn-primary mt-md" onClick={fetchDevices} type="button">
@@ -261,7 +261,7 @@ export default function DevicesPage() {
         searchKeys={['device_id', 'label', 'agent_name', 'agent_code']}
         searchPlaceholder="Rechercher un TPE par ID, nom ou agent..."
         idKey="device_id"
-        emptyIcon="📱"
+        emptyIcon="—"
         emptyTitle="Aucun terminal"
         emptyDesc="Enregistrez votre premier TPE pour commencer."
       />

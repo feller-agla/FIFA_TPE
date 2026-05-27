@@ -102,7 +102,6 @@ export function Sidebar({ counts }: SidebarProps) {
                 className={`sidebar-link ${isActive ? 'active' : ''}`}
                 id={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
               >
-                <span className="icon" aria-hidden="true">{item.icon}</span>
                 <span>{item.label}</span>
                 {badge != null && badge > 0 && (
                   <span className="badge-count">{badge}</span>

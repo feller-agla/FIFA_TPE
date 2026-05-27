@@ -121,7 +121,7 @@ export default function AgentsPage() {
           type="button"
           style={{ fontSize: '0.8rem' }}
         >
-          ✏️ Modifier
+          Modifier
         </button>
       ),
     },
@@ -164,7 +164,7 @@ export default function AgentsPage() {
         />
         <div className="card">
           <div className="empty-state">
-            <div className="empty-state-icon">⚠️</div>
+            <div className="empty-state-icon"></div>
             <div className="empty-state-title">Erreur de chargement</div>
             <div className="empty-state-desc">{error}</div>
             <button
@@ -231,7 +231,7 @@ export default function AgentsPage() {
         searchKeys={['code', 'full_name', 'phone']}
         searchPlaceholder="Rechercher un agent par nom, code ou téléphone..."
         idKey="id"
-        emptyIcon="👤"
+        emptyIcon="—"
         emptyTitle="Aucun agent"
         emptyDesc="Créez votre premier agent pour commencer."
       />

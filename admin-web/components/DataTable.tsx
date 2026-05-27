@@ -28,7 +28,7 @@ export function DataTable<T extends Record<string, unknown>>({
   searchPlaceholder = 'Rechercher...',
   pageSize = 15,
   idKey = 'id',
-  emptyIcon = '📋',
+  emptyIcon = '—',
   emptyTitle = 'Aucune donnée',
   emptyDesc = 'Il n\'y a pas encore de données à afficher.',
 }: DataTableProps<T>) {
@@ -95,7 +95,11 @@ export function DataTable<T extends Record<string, unknown>>({
     <div className="card" id="data-table-card">
       <div className="table-controls">
         <div className="table-search">
-          <span className="search-icon" aria-hidden="true">🔍</span>
+          <span className="search-icon" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
           <input
             type="text"
             placeholder={searchPlaceholder}

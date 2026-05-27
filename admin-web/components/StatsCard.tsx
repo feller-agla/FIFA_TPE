@@ -6,12 +6,12 @@ type StatsCardProps = {
   trend?: { value: string; direction: 'up' | 'down' };
 };
 
-export function StatsCard({ icon, label, value, color = 'yellow', trend }: StatsCardProps) {
+export function StatsCard({ label, value, color = 'yellow', trend }: Omit<StatsCardProps, 'icon'>) {
   return (
     <div className="stat-card" id={`stat-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <div className="stat-card-header">
         <div className={`stat-card-icon ${color}`}>
-          <span aria-hidden="true">{icon}</span>
+          <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
         </div>
         {trend && (
           <div className={`stat-card-trend ${trend.direction}`}>

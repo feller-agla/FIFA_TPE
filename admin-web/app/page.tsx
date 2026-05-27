@@ -67,25 +67,21 @@ export default async function DashboardPage() {
       {/* Stats Cards */}
       <div className="stats-grid">
         <StatsCard
-          icon="👤"
           label="Agents actifs"
           value={dashboard.agents}
           color="yellow"
         />
         <StatsCard
-          icon="📱"
           label="Terminaux TPE"
           value={dashboard.devices}
           color="blue"
         />
         <StatsCard
-          icon="🎫"
           label="Tickets émis"
           value={dashboard.tickets}
           color="green"
         />
         <StatsCard
-          icon="💰"
           label="Revenus totaux"
           value={
             (dashboard.recentTickets ?? []).reduce(
@@ -103,7 +99,7 @@ export default async function DashboardPage() {
         <div className="card" style={{ gridColumn: '1 / -1' }}>
           <div className="card-header">
             <div className="card-header-left">
-              <span className="card-header-icon" aria-hidden="true">🎫</span>
+              <span className="card-header-icon" aria-hidden="true">—</span>
               <div>
                 <div className="card-title">Derniers tickets</div>
                 <div className="card-subtitle">Les 10 tickets les plus récents</div>
@@ -116,7 +112,7 @@ export default async function DashboardPage() {
           <div className="card-body-flush">
             {(!dashboard.recentTickets || dashboard.recentTickets.length === 0) ? (
               <div className="empty-state">
-                <div className="empty-state-icon" aria-hidden="true">🎫</div>
+                <div className="empty-state-icon" aria-hidden="true"></div>
                 <div className="empty-state-title">Aucun ticket</div>
                 <div className="empty-state-desc">
                   Aucun ticket n{"'"}a encore été émis par les TPE.
@@ -191,21 +187,21 @@ export default async function DashboardPage() {
       {/* Quick Actions */}
       <div className="quick-actions">
         <a href="/agents" className="quick-action-card" id="quick-action-agents">
-          <div className="quick-action-icon" aria-hidden="true">👤</div>
+          <div className="quick-action-icon" aria-hidden="true"></div>
           <div className="quick-action-info">
             <h4>Gérer les agents</h4>
             <p>Ajouter, modifier ou désactiver</p>
           </div>
         </a>
         <a href="/devices" className="quick-action-card" id="quick-action-devices">
-          <div className="quick-action-icon" aria-hidden="true">📱</div>
+          <div className="quick-action-icon" aria-hidden="true"></div>
           <div className="quick-action-info">
             <h4>Gérer les TPE</h4>
             <p>Enregistrer et assigner des terminaux</p>
           </div>
         </a>
         <a href="/tickets" className="quick-action-card" id="quick-action-tickets">
-          <div className="quick-action-icon" aria-hidden="true">🎫</div>
+          <div className="quick-action-icon" aria-hidden="true"></div>
           <div className="quick-action-info">
             <h4>Historique tickets</h4>
             <p>Rechercher et filtrer les tickets</p>

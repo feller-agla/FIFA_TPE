@@ -98,7 +98,7 @@ export default function SessionsPage() {
     return (
       <>
         <PageHeader icon="🔐" title="Sessions" subtitle="Connexions TPE actives" breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Sessions' }]} />
-        <div className="card"><div className="empty-state"><div className="empty-state-icon">⚠️</div><div className="empty-state-title">Erreur de chargement</div><div className="empty-state-desc">{error}</div></div></div>
+        <div className="card"><div className="empty-state"><div className="empty-state-icon"></div><div className="empty-state-title">Erreur de chargement</div><div className="empty-state-desc">{error}</div></div></div>
       </>
     );
   }
@@ -112,7 +112,7 @@ export default function SessionsPage() {
         searchKeys={['agent_name', 'agent_code', 'device_id', 'device_label']}
         searchPlaceholder="Rechercher par agent ou terminal..."
         idKey="id"
-        emptyIcon="🔐"
+        emptyIcon="—"
         emptyTitle="Aucune session"
         emptyDesc="Les connexions TPE apparaîtront ici."
       />

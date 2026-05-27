@@ -28,7 +28,6 @@ export function PageHeader({ icon, title, subtitle, breadcrumb, actions }: PageH
           </nav>
         )}
         <h1 className="page-title" id="page-title">
-          <span className="title-icon" aria-hidden="true">{icon}</span>
           {title}
         </h1>
         <p className="page-subtitle">{subtitle}</p>

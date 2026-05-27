@@ -24,6 +24,8 @@ type Ticket = {
   passenger_name: string | null;
   passenger_phone: string | null;
   package_details: string | null;
+  sender_name: string | null;
+  sender_phone: string | null;
   receiver_name: string | null;
   receiver_phone: string | null;
   created_at: string;
@@ -112,6 +114,11 @@ const columns: Column<Ticket>[] = [
     render: (row) => row.passenger_name ?? '—',
   },
   {
+    key: 'sender_name',
+    label: 'Expéditeur',
+    render: (row) => row.sender_name ?? '—',
+  },
+  {
     key: 'created_at',
     label: 'Date',
     sortable: true,
@@ -170,7 +177,7 @@ export default function TicketsPage() {
             setShowEditModal(true);
           }}
         >
-          ✏️ Modifier
+          Modifier
         </button>
       ),
     },
@@ -213,7 +220,7 @@ export default function TicketsPage() {
         />
         <div className="card">
           <div className="empty-state">
-            <div className="empty-state-icon">⚠️</div>
+            <div className="empty-state-icon"></div>
             <div className="empty-state-title">Erreur de chargement</div>
             <div className="empty-state-desc">{error}</div>
             <button className="btn btn-primary mt-md" onClick={fetchTickets} type="button">
@@ -245,7 +252,7 @@ export default function TicketsPage() {
         <div className="stat-card">
           <div className="stat-card-header">
             <div className="stat-card-icon blue">
-              <span aria-hidden="true">🎫</span>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
             </div>
           </div>
           <div className="stat-card-value">{tickets.length.toLocaleString('fr-FR')}</div>
@@ -254,7 +261,7 @@ export default function TicketsPage() {
         <div className="stat-card">
           <div className="stat-card-header">
             <div className="stat-card-icon yellow">
-              <span aria-hidden="true">💰</span>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
             </div>
           </div>
           <div className="stat-card-value">{formatAmount(totalRevenue)}</div>
@@ -263,7 +270,7 @@ export default function TicketsPage() {
         <div className="stat-card">
           <div className="stat-card-header">
             <div className="stat-card-icon green">
-              <span aria-hidden="true">📊</span>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
             </div>
           </div>
           <div className="stat-card-value">
@@ -274,7 +281,7 @@ export default function TicketsPage() {
         <div className="stat-card">
           <div className="stat-card-header">
             <div className="stat-card-icon red">
-              <span aria-hidden="true">🚌</span>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor', display: 'inline-block' }} />
             </div>
           </div>
           <div className="stat-card-value">{serviceTypes.length}</div>
@@ -285,10 +292,10 @@ export default function TicketsPage() {
       <DataTable<Ticket>
         columns={columnsWithAction}
         data={tickets}
-        searchKeys={['reference', 'agent_name', 'agent_code', 'device_label', 'service_type', 'route', 'passenger_name']}
+        searchKeys={['reference', 'agent_name', 'agent_code', 'device_label', 'service_type', 'route', 'passenger_name', 'sender_name']}
         searchPlaceholder="Rechercher par référence, agent, trajet, passager..."
         idKey="id"
-        emptyIcon="🎫"
+        emptyIcon="—"
         emptyTitle="Aucun ticket"
         emptyDesc="Aucun ticket n'a encore été émis par les TPE."
       />
@@ -339,6 +346,8 @@ export default function TicketsPage() {
               { name: 'passengerName', label: 'Nom passager', initialValue: selectedTicket.passenger_name ?? '' },
               { name: 'passengerPhone', label: 'Téléphone passager', initialValue: selectedTicket.passenger_phone ?? '' },
               { name: 'packageDetails', label: 'Détails colis', initialValue: selectedTicket.package_details ?? '' },
+              { name: 'senderName', label: 'Nom expéditeur', initialValue: selectedTicket.sender_name ?? '' },
+              { name: 'senderPhone', label: 'Téléphone expéditeur', initialValue: selectedTicket.sender_phone ?? '' },
               { name: 'receiverName', label: 'Nom destinataire', initialValue: selectedTicket.receiver_name ?? '' },
               { name: 'receiverPhone', label: 'Téléphone destinataire', initialValue: selectedTicket.receiver_phone ?? '' },
               { name: 'ticketText', label: 'Texte ticket', initialValue: '' },

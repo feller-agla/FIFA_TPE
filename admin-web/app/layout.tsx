@@ -1,6 +1,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
 import { Sidebar } from '@/components/Sidebar';
+import { LockScreen } from '@/components/LockScreen';
 
 export const metadata = {
   title: {
@@ -44,14 +45,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
-        <div className="app-layout">
-          <Sidebar counts={counts} />
-          <main className="main-content">
-            <div className="page-content">
-              {children}
-            </div>
-          </main>
-        </div>
+        <LockScreen>
+          <div className="app-layout">
+            <Sidebar counts={counts} />
+            <main className="main-content">
+              <div className="page-content">
+                {children}
+              </div>
+            </main>
+          </div>
+        </LockScreen>
       </body>
     </html>
   );
